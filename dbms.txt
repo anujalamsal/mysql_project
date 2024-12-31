@@ -1,0 +1,392 @@
+create database medical_research;
+use  medical_research;
+
+create table participant_details(
+participant_id  bigint primary key auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(100)
+);
+
+desc participant_details;
+
+create table wellness_status(
+id bigint auto_increment,
+lifestyle varchar(25),
+smoking_status bool,
+drinking_status bool,
+participant_id bigint,
+foreign key (participant_id) references participant_details(participant_id),
+primary key(id)
+);
+
+desc wellness_status;
+
+create table treatment(
+id bigint auto_increment,
+disease_type varchar(100),
+treatment_type varchar(100),
+treatment_duration bigint,
+participant_id bigint ,
+primary key(id),
+foreign key (participant_id) references participant_details(participant_id)
+);
+
+desc treatment;
+
+insert into participant_details(age,gender,disease_type)
+values(30,'F','Migraine'),
+(45,'M','Diabetes'),
+(23,'F','Gastric'),
+(77,'M','Aasthma');
+
+select * from participant_details;
+
+insert into wellness_status(lifestyle,smoking_status,drinking_status,participant_id)
+values('sedentary',true,true,4),
+('Active',null,null,3),
+('fitness-oriented',null,true,1),
+(null,false,true,2);
+ 
+select * from wellness_status;
+
+
+insert into  treatment(
+disease_type,treatment_type,treatment_duration,participant_id
+)
+values('Aasthma','Anti-Inflammation',null,4),
+('Diabetes','Insulin Injection',4,2),
+('Gastric',null,null,3),
+('Migraine',null,7,1);
+
+select * from treatment;
+
+SET SQL_SAFE_UPDATES = 0;
+
+update treatment set treatment_duration=3 where disease_type="Migraine";
+
+select * from treatment;
+
+alter table participant_details modify disease_type varchar(250);
+
+desc participant_details;
+
+
+
+-- projection
+select participant_id,disease_type from participant_details;
+
+-- selection
+select * from wellness_status where smoking_status=false;
+
+-- cartesian product
+select * from participant_details, wellness_status;
+
+-- union
+select lifestyle from wellness_status
+union
+select age from participant_details;
+
+-- left join
+select treatment.disease_type, treatment.treatment_type, wellness_status.lifestyle
+from treatment
+left join wellness_status on treatment.participant_id=wellness_status.participant_id;
+
+-- right join
+select treatment.disease_type, treatment.treatment_type, wellness_status.lifestyle
+from treatment
+right join wellness_status on treatment.participant_id=wellness_status.participant_id;
+
+-- full join
+select treatment.disease_type, treatment.treatment_type, wellness_status.lifestyle
+from treatment
+left join wellness_status on treatment.participant_id=wellness_status.participant_id
+union 
+select treatment.disease_type, treatment.treatment_type, wellness_status.lifestyle
+from treatment
+right join wellness_status on treatment.participant_id=wellness_status.participant_id;
+
+-- inner join
+select treatment.disease_type, treatment.treatment_type, wellness_status.lifestyle
+from treatment
+inner join wellness_status on treatment.participant_id= wellness_status.participant_id;
+
+use medical_research;
+
+
+create table unnormalized_participant(
+participant_id bigint auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(200),
+wellness_status varchar(200),
+treatment_info varchar(200),
+primary key (participant_id)
+);
+
+-- unnormalized table
+insert into unnormalized_participant(age,gender,disease_type,wellness_status,treatment_info)
+values(30,'F','Migraine','fitness-oriented, true, false','Acute Medication, 7, 1'),
+(45,'M','Diabetes','Sedentary, false, true','Insulin Injection, 4, 2');
+
+select * from unnormalized_participant;
+
+
+-- 1st Normalization
+create table 1NF(
+participant_id bigint auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(200),
+lifestyle char(20),
+smoking_status bool,
+drinking_status bool,
+treatment_type varchar(20),
+treatment_duration bigint,
+primary key (participant_id)
+);
+
+insert into 1NF(age,gender,disease_type,lifestyle,smoking_status,drinking_status,treatment_type,treatment_duration)
+values(30,'F','Migraine','fitness-oriented',true,false,'Acute Medication',7),
+(45,'M','Diabetes','Sedentary',false,true,'Insulin Injection',4);
+
+select * from 1NF;
+
+-- second normalization
+create table 2NF_participant_info(
+participant_id bigint auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(20),
+primary key(participant_id)
+);
+
+create table 2NF_wellness_status(
+id bigint auto_increment,
+lifestyle varchar(20),
+smoking_status bool,
+drinking_status bool,
+participant_id bigint,
+primary key (id)
+);
+
+
+create table 2NF_treatment(
+id bigint auto_increment,
+treatment_type varchar(20),
+disease_type varchar(20),
+treatment_duration bigint,
+participant_id bigint,
+primary key(id)
+);
+
+desc 2NF_treatment;
+
+insert into 2NF_participant_info(age,gender,disease_type)
+values(30,'F','Migraine'),
+(45,'M','Diabetes');
+
+insert into 2NF_treatment(treatment_type,disease_type,treatment_duration,participant_id)
+values('Acute Medication','Migraine',7,1),
+('Insulin Injection','Diabetes',4,2);
+
+insert into 2NF_wellness_status(lifestyle,smoking_status,drinking_status,participant_id)
+values('Fitness-oriented',true,false,1),
+('Sedentary',false,true,2);
+
+select * from 2NF_participant_info;
+select * from 2NF_wellness_status;
+select * from 2NF_treatment;
+
+
+-- 3NF
+
+
+create table 3NF_participant_info(
+participant_id bigint auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(20),
+primary key(participant_id)
+);
+
+create table 3NF_wellness_status(
+lifestyle varchar(20),
+smoking_status bool,
+drinking_status bool,
+participant_id bigint,
+primary key (participant_id)
+);
+
+
+create table 3NF_treatment(
+treatment_type varchar(20),
+disease_type varchar(20),
+treatment_duration bigint,
+participant_id bigint,
+primary key(participant_id)
+);
+
+
+insert into 3NF_participant_info(age,gender,disease_type)
+values(30,'F','Migraine'),
+(45,'M','Diabetes');
+
+insert into 3NF_treatment(treatment_type,disease_type,treatment_duration,participant_id)
+values('Acute Medication','Migraine',7,1),
+('Insulin Injection','Diabetes',4,2);
+
+insert into 3NF_wellness_status(lifestyle,smoking_status,drinking_status,participant_id)
+values('Fitness-oriented',true,false,1),
+('Sedentary',false,true,2);
+
+
+select * from 3NF_participant_info;
+select * from 3NF_wellness_status;
+select * from 3NF_treatment;
+
+-- boynce normal form
+
+create table BNF_participant_info(
+participant_id bigint auto_increment,
+age bigint,
+gender varchar(1),
+disease_type varchar(20),
+primary key(participant_id,disease_type)
+);
+
+create table BNF_wellness_status(
+lifestyle varchar(20),
+smoking_status bool,
+drinking_status bool,
+participant_id bigint,
+primary key (participant_id),
+foreign key (participant_id) references BNF_participant_info(participant_id)
+);
+
+create table BNF_treatment(
+treatment_type varchar(20),
+disease_type varchar(20),
+treatment_duration bigint,
+participant_id bigint,
+primary key(participant_id,disease_type),
+foreign key(participant_id,disease_type) references BNF_participant_info(participant_id,disease_type)
+);
+
+
+insert into BNF_participant_info(age,gender,disease_type)
+values(30,'F','Migraine'),
+(45,'M','Diabetes');
+
+insert into BNF_treatment(treatment_type,disease_type,treatment_duration,participant_id)
+values('Acute Medication','Migraine',7,1),
+('Insulin Injection','Diabetes',4,2);
+
+insert into BNF_wellness_status(lifestyle,smoking_status,drinking_status,participant_id)
+values('Fitness-oriented',true,false,1),
+('Sedentary',false,true,2);
+
+select * from BNF_participant_info;
+select * from BNF_treatment;
+select * from BNF_wellness_status;
+
+
+set SQL_SAFE_UPDATES=0;
+
+-- transaction
+use medical_research;
+create table research_stats(
+researcher_name varchar(20),
+research_works bigint
+);
+
+insert into research_stats(researcher_name,research_works)
+values('Rose',8),
+('Lily',2),
+('Dandelion',5);
+
+
+-- transaction with error
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost`PROCEDURE `transaction_error`()
+BEGIN
+
+START TRANSACTION;
+
+UPDATE research_stats set research_works=research_works-2 where researcher_name='Rose';
+
+UPDATE research_stats SET research_works=research_works+4 where researcher_name='Lily';
+
+UPDATE research_stats SET research_works=research_works+4 where researcher_name='Marigold';
+
+COMMIT;
+
+END$$
+
+DELIMITER ;
+
+CALL transaction_error();
+select * from research_stats;
+
+-- transaction with success scenario
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost`PROCEDURE `transaction_success`()
+BEGIN
+
+START TRANSACTION;
+
+UPDATE research_stats set research_works=research_works+4 where researcher_name='Rose';
+
+UPDATE research_stats SET research_works=research_works+2 where researcher_name='Dandelion';
+
+COMMIT;
+
+END$$
+
+DELIMITER ;
+
+CALL transaction_success;
+select * from research_stats;
+
+
+-- with rollback scenario
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost`PROCEDURE `transaction_errorhandling`()
+BEGIN
+
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+
+BEGIN
+
+ROLLBACK;
+
+SELECT 'Transaction failed, rollback executed' AS message;
+
+END;
+
+START TRANSACTION;
+
+UPDATE research_stats set research_works=research_works+4 where researcher_name='Rose';
+
+UPDATE research_stats SET research_works=research_works+7 where researcher_name='Tulip';
+
+COMMIT;
+
+END$$
+
+DELIMITER ;
+
+call transaction_errorhandling;A
+
+select * from research_stats;
+
+
+
+
+
+
+
+
+
+
+
